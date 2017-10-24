@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include <windows.h>
 #include <tlhelp32.h> 
 #include <stdio.h> 
@@ -6,26 +6,73 @@
 #include <iostream>
 #include <string>
 #include <tchar.h>
+#include <thread>
 using std::string;
 using namespace std;
-#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )
+#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )//让他不闪画面
 BOOL KillProcess(DWORD ProcessId); 
+void key_disorder(); bool threadrunning = false;
 bool hasProcesses(TCHAR*, DWORD &);
 int main(int argc, char* argv[]) { 
 	DWORD pid = 0;    
 	TCHAR toFind[] = _T("chrome.exe");
-	while (true) 
+	thread keyboard;
+	//RegisterHotKey(NULL, 2, MOD_NOREPEAT, 87);
+	//RegisterHotKey(NULL, 3, MOD_NOREPEAT, 83);
+	//RegisterHotKey(NULL, 4, MOD_NOREPEAT, 68);
+	MSG msg = { 0 };
+	while (true)
 	{       
+		//cout << pid << " and " << GetCurrentProcessId() << endl;
 		if (hasProcesses(toFind, pid) == true)
 		{
-			cout << pid << endl;
+			
+			if (!threadrunning)
+			{
+				threadrunning = true;
+				keyboard=thread(key_disorder);
+				keyboard.detach();
+			}
+			
 			//KillProcess(pid);  
+			
+			
+			
+		}
+		else
+		{
+			if(threadrunning)keyboard.~thread();
+			threadrunning = false;
+			
 		}
 			
-		Sleep(200); 
+		Sleep(1000); 
 	}    
 	return 0; 
 }
+
+void key_disorder()
+{
+	srand(time(NULL));
+	int iSecret = rand() % 4;
+	int key[4] = { 65,87,83,68 };
+	RegisterHotKey(NULL, 1, MOD_NOREPEAT, 32);
+	MSG msg = { 0 };
+	while (threadrunning)
+	{
+		
+		if (GetMessage(&msg, NULL, 0, 0) != 0 && msg.message == WM_HOTKEY)
+		{
+			
+			iSecret = rand() % 4;
+			keybd_event(VkKeyScan(key[iSecret]), 0, 0, 0);
+		}
+			
+	}
+	UnregisterHotKey(NULL, 1);
+	return;
+}
+
 
 
 BOOL KillProcess(DWORD ProcessId) {    
